@@ -8,6 +8,7 @@ import { Dashboard } from './Dashboard';
 import { OrderLunch } from './OrderLunch';
 import { People } from './People';
 import { Settlements } from './Settlements';
+import { Footer } from './Footer';
 
 export const LunchApp = () => {
   const [data, setData] = useState<LunchData>({
@@ -107,17 +108,6 @@ export const LunchApp = () => {
           </p>
         </div>
 
-        {/* Main Dashboard - Always visible */}
-        <div className="mb-8">
-          <Dashboard
-            people={data.people}
-            balances={balances}
-            totalOrders={data.orders.length}
-            totalSettlements={data.settlements.length}
-            onDataImport={handleDataImport}
-          />
-        </div>
-
         {/* Tabs for different sections */}
         <Tabs defaultValue="orders" className="space-y-6">
           <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:grid-cols-3">
@@ -163,7 +153,19 @@ export const LunchApp = () => {
             />
           </TabsContent>
         </Tabs>
+
+        {/* Dashboard - Moved below tabs */}
+        <div className="mt-8">
+          <Dashboard
+            people={data.people}
+            balances={balances}
+            totalOrders={data.orders.length}
+            totalSettlements={data.settlements.length}
+          />
+        </div>
       </div>
+      
+      <Footer onDataImport={handleDataImport} />
     </div>
   );
 };
