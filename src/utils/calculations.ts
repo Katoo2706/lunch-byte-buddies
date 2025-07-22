@@ -15,11 +15,8 @@ export const calculateBalances = (
   // Calculate from orders
   orders.forEach(order => {
     if (order.isTeamOrder && order.teamMembers) {
-      // For team orders, split the cost among team members
-      const costPerPerson = order.price / order.teamMembers.length;
-      order.teamMembers.forEach(memberId => {
-        balances[memberId] -= costPerPerson;
-      });
+      // For team orders, the person ordering owes money (negative)
+      balances[order.personId] -= order.price;
       // Person who paid should receive money (positive)
       balances[order.payerId] += order.price;
     } else {

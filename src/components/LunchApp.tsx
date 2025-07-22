@@ -1,99 +1,25 @@
-import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { UtensilsCrossed, Users, Receipt, BarChart3 } from 'lucide-react';
-import { Person, LunchOrder, Settlement, LunchData } from '@/types/lunch';
-import { calculateBalances } from '@/utils/calculations';
-import { loadData, saveData } from '@/utils/storage';
+import { UtensilsCrossed, Users, Receipt } from 'lucide-react';
 import { Dashboard } from './Dashboard';
 import { OrderLunch } from './OrderLunch';
 import { People } from './People';
 import { Settlements } from './Settlements';
 import { Footer } from './Footer';
+import { useLunchData } from '@/hooks/useLunchData';
 
 export const LunchApp = () => {
-  const [data, setData] = useState<LunchData>({
-    people: [],
-    orders: [],
-    settlements: []
-  });
-
-  // Load data on component mount
-  useEffect(() => {
-    const loadedData = loadData();
-    setData(loadedData);
-  }, []);
-
-  // Save data whenever it changes
-  useEffect(() => {
-    saveData(data);
-  }, [data]);
-
-  const balances = calculateBalances(data.people, data.orders, data.settlements);
-
-  const generateId = () => {
-    return Date.now().toString() + Math.random().toString(36).substr(2, 9);
-  };
-
-  // Person management
-  const addPerson = (person: Omit<Person, 'id'>) => {
-    setData(prev => ({
-      ...prev,
-      people: [...prev.people, { ...person, id: generateId() }]
-    }));
-  };
-
-  const deletePerson = (personId: string) => {
-    setData(prev => ({
-      ...prev,
-      people: prev.people.filter(p => p.id !== personId),
-      orders: prev.orders.filter(o => o.personId !== personId && o.payerId !== personId),
-      settlements: prev.settlements.filter(s => s.fromPersonId !== personId && s.toPersonId !== personId)
-    }));
-  };
-
-  const updatePerson = (personId: string, updates: Partial<Person>) => {
-    setData(prev => ({
-      ...prev,
-      people: prev.people.map(p => 
-        p.id === personId ? { ...p, ...updates } : p
-      )
-    }));
-  };
-
-  // Order management
-  const addOrder = (order: Omit<LunchOrder, 'id'>) => {
-    setData(prev => ({
-      ...prev,
-      orders: [...prev.orders, { ...order, id: generateId() }]
-    }));
-  };
-
-  const deleteOrder = (orderId: string) => {
-    setData(prev => ({
-      ...prev,
-      orders: prev.orders.filter(o => o.id !== orderId)
-    }));
-  };
-
-  // Settlement management
-  const addSettlement = (settlement: Omit<Settlement, 'id'>) => {
-    setData(prev => ({
-      ...prev,
-      settlements: [...prev.settlements, { ...settlement, id: generateId() }]
-    }));
-  };
-
-  const deleteSettlement = (settlementId: string) => {
-    setData(prev => ({
-      ...prev,
-      settlements: prev.settlements.filter(s => s.id !== settlementId)
-    }));
-  };
-
-  const handleDataImport = () => {
-    const loadedData = loadData();
-    setData(loadedData);
-  };
+  const {
+    data,
+    balances,
+    addPerson,
+    deletePerson,
+    updatePerson,
+    addOrder,
+    deleteOrder,
+    addSettlement,
+    deleteSettlement,
+    handleDataImport
+  } = useLunchData();
 
   return (
     <div className="min-h-screen bg-background">
