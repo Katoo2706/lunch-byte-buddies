@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Trash2, Calendar, DollarSign } from 'lucide-react';
+import { Plus, Trash2, Calendar, DollarSign, Users } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Person, LunchOrder } from '@/types/lunch';
 import { GenderIcon } from './GenderIcon';
 import { formatCurrency, getDefaultPayer } from '@/utils/calculations';
@@ -24,30 +25,47 @@ export const OrderLunch = ({ people, orders, onAddOrder, onDeleteOrder }: OrderL
   const [customPrice, setCustomPrice] = useState('');
   const [selectedPayer, setSelectedPayer] = useState('');
   const [note, setNote] = useState('');
+  const [isTeamOrder, setIsTeamOrder] = useState(false);
+  const [selectedTeamMembers, setSelectedTeamMembers] = useState<string[]>([]);
 
   const defaultPayer = getDefaultPayer(people);
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedPerson || !selectedPayer) return;
+    if (isTeamOrder) {
+      if (!selectedPayer || selectedTeamMembers.length === 0) return;
+    } else {
+      if (!selectedPerson || !selectedPayer) return;
+    }
     
     const finalPrice = price === 0 ? parseInt(customPrice) || 0 : price;
     
     onAddOrder({
-      personId: selectedPerson,
+      personId: isTeamOrder ? selectedTeamMembers[0] : selectedPerson, // Use first team member as primary person for team orders
       date,
       price: finalPrice,
       payerId: selectedPayer,
-      note: note.trim() || undefined
+      note: note.trim() || undefined,
+      isTeamOrder,
+      teamMembers: isTeamOrder ? selectedTeamMembers : undefined
     });
     
     // Reset form
     setSelectedPerson('');
+    setSelectedTeamMembers([]);
     setPrice(40000);
     setCustomPrice('');
     setNote('');
     // Keep date and payer for convenience
+  };
+
+  const handleTeamMemberToggle = (personId: string) => {
+    setSelectedTeamMembers(prev => 
+      prev.includes(personId) 
+        ? prev.filter(id => id !== personId)
+        : [...prev, personId]
+    );
   };
 
   const getPersonName = (personId: string) => {
@@ -68,7 +86,39 @@ export const OrderLunch = ({ people, orders, onAddOrder, onDeleteOrder }: OrderL
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Team Order Toggle */}
+            <div className="flex items-center space-x-2 p-4 bg-muted rounded-lg">
+              <Checkbox
+                id="team-order"
+                checked={isTeamOrder}
+                onCheckedChange={(checked) => setIsTeamOrder(checked === true)}
+              />
+              <Label htmlFor="team-order" className="flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                Team Order (One payer for multiple people)
+              </Label>
+            </div>
+
+            {isTeamOrder ? (
+              <div>
+                <Label>Select Team Members</Label>
+                <div className="grid grid-cols-2 gap-2 mt-2 p-4 border rounded-lg">
+                  {people.map(person => (
+                    <div key={person.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`team-${person.id}`}
+                        checked={selectedTeamMembers.includes(person.id)}
+                        onCheckedChange={() => handleTeamMemberToggle(person.id)}
+                      />
+                      <Label htmlFor={`team-${person.id}`} className="flex items-center gap-2 cursor-pointer">
+                        <GenderIcon gender={person.gender} />
+                        {person.name}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
               <div>
                 <Label htmlFor="person">Person Ordering</Label>
                 <Select value={selectedPerson} onValueChange={setSelectedPerson}>
@@ -88,16 +138,16 @@ export const OrderLunch = ({ people, orders, onAddOrder, onDeleteOrder }: OrderL
                   </SelectContent>
                 </Select>
               </div>
+            )}
 
-              <div>
-                <Label htmlFor="date">Date</Label>
-                <Input
-                  type="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  className="w-full"
-                />
-              </div>
+            <div>
+              <Label htmlFor="date">Date</Label>
+              <Input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="w-full"
+              />
             </div>
 
             <div>
@@ -198,10 +248,27 @@ export const OrderLunch = ({ people, orders, onAddOrder, onDeleteOrder }: OrderL
                   <div className="flex items-center gap-3">
                     <GenderIcon gender={people.find(p => p.id === order.personId)?.gender || 'male'} />
                     <div>
-                      <p className="font-medium">{getPersonName(order.personId)}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Paid by: {getPersonName(order.payerId)} • {formatCurrency(order.price)}
-                      </p>
+                      {order.isTeamOrder ? (
+                        <>
+                          <p className="font-medium flex items-center gap-2">
+                            <Users className="w-4 h-4" />
+                            Team Order ({order.teamMembers?.length} people)
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {order.teamMembers?.map(id => getPersonName(id)).join(', ')}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Paid by: {getPersonName(order.payerId)} • {formatCurrency(order.price)} total • {formatCurrency(order.price / (order.teamMembers?.length || 1))} per person
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="font-medium">{getPersonName(order.personId)}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Paid by: {getPersonName(order.payerId)} • {formatCurrency(order.price)}
+                          </p>
+                        </>
+                      )}
                       {order.note && <p className="text-xs text-muted-foreground">{order.note}</p>}
                     </div>
                   </div>

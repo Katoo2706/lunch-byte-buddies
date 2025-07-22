@@ -12,6 +12,8 @@ export interface LunchOrder {
   price: number;
   payerId: string; // who paid for this order
   note?: string;
+  isTeamOrder?: boolean;
+  teamMembers?: string[]; // array of person IDs for team orders
 }
 
 export interface Settlement {

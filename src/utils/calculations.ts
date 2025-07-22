@@ -14,10 +14,20 @@ export const calculateBalances = (
   
   // Calculate from orders
   orders.forEach(order => {
-    // Person who ordered owes money (negative)
-    balances[order.personId] -= order.price;
-    // Person who paid should receive money (positive)
-    balances[order.payerId] += order.price;
+    if (order.isTeamOrder && order.teamMembers) {
+      // For team orders, split the cost among team members
+      const costPerPerson = order.price / order.teamMembers.length;
+      order.teamMembers.forEach(memberId => {
+        balances[memberId] -= costPerPerson;
+      });
+      // Person who paid should receive money (positive)
+      balances[order.payerId] += order.price;
+    } else {
+      // Regular order: person who ordered owes money (negative)
+      balances[order.personId] -= order.price;
+      // Person who paid should receive money (positive)  
+      balances[order.payerId] += order.price;
+    }
   });
   
   // Apply settlements
