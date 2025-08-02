@@ -135,7 +135,7 @@
   }
   
   .gender-icon {
-    @apply w-5 h-5 transition-smooth;
+    @apply w-5 h-5 transition-all duration-300 ease-in-out;
   }
   
   .balance-positive {
