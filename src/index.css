@@ -127,11 +127,11 @@
 @layer components {
   /* Food-themed component styles with optimizations */
   .lunch-card {
-    @apply bg-gradient-to-br from-card to-muted border border-border rounded-xl shadow-soft transition-smooth hover:shadow-warm will-change-transform;
+    @apply bg-gradient-to-br from-card to-muted border border-border rounded-xl shadow-soft transition-all hover:shadow-warm will-change-transform;
   }
   
   .hero-button {
-    @apply bg-gradient-to-r from-primary to-primary-glow text-primary-foreground shadow-soft hover:shadow-warm transition-smooth hover:scale-105 will-change-transform;
+    @apply bg-gradient-to-r from-primary to-primary-glow text-primary-foreground shadow-soft hover:shadow-warm transition-all hover:scale-105 will-change-transform;
   }
   
   .gender-icon {
