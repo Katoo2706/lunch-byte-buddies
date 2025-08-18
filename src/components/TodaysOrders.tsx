@@ -191,6 +191,15 @@ export const TodaysOrders = ({ date, orders, people, balances, onDeleteOrder }: 
               </Button>
             </div>
 
+            {getHistoricalOrders().length > 0 && (
+              <div className="flex justify-between items-center p-3 bg-primary/10 rounded-lg border">
+                <span className="font-medium">Total Amount:</span>
+                <span className="font-bold text-primary text-lg">
+                  {formatCurrency(getHistoricalOrders().reduce((sum, order) => sum + order.price, 0))}
+                </span>
+              </div>
+            )}
+
             <div className="space-y-2 max-h-96 overflow-y-auto">
               {getHistoricalOrders().length === 0 ? (
                 <p className="text-muted-foreground text-center py-4">
@@ -207,9 +216,6 @@ export const TodaysOrders = ({ date, orders, people, balances, onDeleteOrder }: 
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <span className="font-medium">{getPersonName(order.personId)}</span>
-                          {order.isTeamOrder && (
-                            <Badge variant="secondary" className="text-xs">Team</Badge>
-                          )}
                         </div>
                         <div className="text-sm text-muted-foreground">
                           {order.note || "Lunch order"} • Paid by: {getPersonName(order.payerId)}
