@@ -1,17 +1,18 @@
 import { useState } from 'react';
 import { Users } from 'lucide-react';
-import { Person, LunchOrder } from '@/types/lunch';
+import { Person, LunchOrder, Balance } from '@/types/lunch';
 import { TeamOrderForm } from './TeamOrderForm';
 import { TodaysOrders } from './TodaysOrders';
 
 interface OrderLunchProps {
   people: Person[];
   orders: LunchOrder[];
+  balances: Balance[];
   onAddOrder: (order: Omit<LunchOrder, 'id'>) => void;
   onDeleteOrder: (orderId: string) => void;
 }
 
-export const OrderLunch = ({ people, orders, onAddOrder, onDeleteOrder }: OrderLunchProps) => {
+export const OrderLunch = ({ people, orders, balances, onAddOrder, onDeleteOrder }: OrderLunchProps) => {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
 
   return (
@@ -32,6 +33,7 @@ export const OrderLunch = ({ people, orders, onAddOrder, onDeleteOrder }: OrderL
         date={date}
         orders={orders}
         people={people}
+        balances={balances}
         onDeleteOrder={onDeleteOrder}
       />
     </div>

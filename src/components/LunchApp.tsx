@@ -55,6 +55,7 @@ export const LunchApp = () => {
             <OrderLunch
               people={data.people}
               orders={data.orders}
+              balances={balances}
               onAddOrder={addOrder}
               onDeleteOrder={deleteOrder}
             />
