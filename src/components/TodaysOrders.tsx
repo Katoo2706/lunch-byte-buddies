@@ -210,9 +210,6 @@ export const TodaysOrders = ({ date, orders, people, balances, onDeleteOrder }: 
                           {order.isTeamOrder && (
                             <Badge variant="secondary" className="text-xs">Team</Badge>
                           )}
-                          {isUnsettled(order) && (
-                            <Badge variant="destructive" className="text-xs">Unsettled</Badge>
-                          )}
                         </div>
                         <div className="text-sm text-muted-foreground">
                           {order.note || "Lunch order"} • Paid by: {getPersonName(order.payerId)}
