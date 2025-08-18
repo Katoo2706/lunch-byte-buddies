@@ -38,13 +38,13 @@ export const TodaysOrders = ({ date, orders, people, balances, onDeleteOrder }: 
   };
 
   const getHistoricalOrders = () => {
-    let historicalOrders = orders.filter(order => order.date !== date);
+    let allOrders = [...orders];
     
     if (showUnsettledOnly) {
-      historicalOrders = historicalOrders.filter(isUnsettled);
+      allOrders = allOrders.filter(isUnsettled);
     }
     
-    return historicalOrders.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return allOrders.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   };
 
   const groupOrdersByTeam = () => {
