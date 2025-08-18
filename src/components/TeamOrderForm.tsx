@@ -1,27 +1,93 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Users, UserPlus } from 'lucide-react';
+import { Plus, Users, UserPlus, CalendarIcon } from 'lucide-react';
 import { Person, LunchOrder } from '@/types/lunch';
 import { GenderIcon } from './GenderIcon';
 import { TeamOrderLine, TeamOrderLineData } from './TeamOrderLine';
 import { getDefaultPayer } from '@/utils/calculations';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+
+const teamOrderSchema = z.object({
+  personId: z.string({
+    required_error: 'Please select a team member',
+  }),
+  dish: z.string().min(2, {
+    message: 'Dish must be at least 2 characters',
+  }),
+  price: z.coerce
+    .number()
+    .min(1000, { message: 'Price must be at least 1,000 VND' }),
+  notes: z.string().optional(),
+});
+
+type TeamOrderFormValues = z.infer<typeof teamOrderSchema>;
 
 interface TeamOrderFormProps {
   people: Person[];
   date: string;
+  onDateChange: (date: string) => void;
   onAddOrder: (order: Omit<LunchOrder, 'id'>) => void;
 }
 
-export const TeamOrderForm = ({ people, date, onAddOrder }: TeamOrderFormProps) => {
+export function TeamOrderForm({
+  people,
+  date,
+  onDateChange,
+  onAddOrder
+}: TeamOrderFormProps) {
+  const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   const [teamLines, setTeamLines] = useState<TeamOrderLineData[]>([]);
   const [selectedPayer, setSelectedPayer] = useState('');
   const [note, setNote] = useState('');
 
+  // Parse date string to Date object for display purposes only
+  const dateObject = date ? new Date(date) : new Date();
+  // Ensure proper timezone handling by setting hours to noon
+  dateObject.setHours(12, 0, 0, 0);
+
   const defaultPayer = getDefaultPayer(people);
+
+  useEffect(() => {
+    // Initialize payer when component mounts or people changes
+    if (defaultPayer && !selectedPayer) {
+      setSelectedPayer(defaultPayer.id);
+    }
+  }, [defaultPayer, people]);
+
+  // Handle date changes from the calendar
+  const handleDateSelect = (newDate: Date | undefined) => {
+    if (newDate) {
+      // Fix timezone issues by setting to noon before formatting
+      newDate.setHours(12, 0, 0, 0);
+
+      // Format date as YYYY-MM-DD, ensuring local timezone is respected
+      const year = newDate.getFullYear();
+      const month = String(newDate.getMonth() + 1).padStart(2, '0');
+      const day = String(newDate.getDate()).padStart(2, '0');
+      const formattedDate = `${year}-${month}-${day}`;
+
+      onDateChange(formattedDate);
+    }
+  };
+
+  const form = useForm<TeamOrderFormValues>({
+    resolver: zodResolver(teamOrderSchema),
+    defaultValues: {
+      dish: '',
+      price: 0,
+      notes: '',
+    },
+  });
 
   const generateLineId = () => {
     return Date.now().toString() + Math.random().toString(36).substr(2, 9);
@@ -49,8 +115,8 @@ export const TeamOrderForm = ({ people, date, onAddOrder }: TeamOrderFormProps) 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedPayer || teamLines.length === 0) return;
-    
+    if (!selectedPayer || teamLines.length === 0 || !date) return;
+
     // Validate all lines have person and valid price
     const validLines = teamLines.filter(line => {
       const finalPrice = line.price === 0 ? parseInt(line.customPrice) || 0 : line.price;
@@ -80,6 +146,12 @@ export const TeamOrderForm = ({ people, date, onAddOrder }: TeamOrderFormProps) 
     // Keep payer for convenience
   };
 
+  const handlePersonChange = (personId: string) => {
+    const person = people.find((p) => p.id === personId);
+    setSelectedPerson(person || null);
+    form.setValue('personId', personId);
+  };
+
   const totalAmount = teamLines.reduce((sum, line) => {
     const finalPrice = line.price === 0 ? parseInt(line.customPrice) || 0 : line.price;
     return sum + finalPrice;
@@ -95,6 +167,33 @@ export const TeamOrderForm = ({ people, date, onAddOrder }: TeamOrderFormProps) 
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Date Picker */}
+          <div>
+            <Label htmlFor="date">Date</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={"outline"}
+                  className={cn(
+                    "w-full pl-3 text-left font-normal",
+                    !date && "text-muted-foreground"
+                  )}
+                >
+                  {date ? format(dateObject, "PPP") : <span>Pick a date</span>}
+                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={dateObject}
+                  onSelect={handleDateSelect}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+
           {/* Team Members Section */}
           <div>
             <div className="flex items-center justify-between mb-3">
@@ -156,7 +255,6 @@ export const TeamOrderForm = ({ people, date, onAddOrder }: TeamOrderFormProps) 
             <Select 
               value={selectedPayer} 
               onValueChange={setSelectedPayer}
-              defaultValue={defaultPayer?.id}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select payer" />
@@ -188,7 +286,7 @@ export const TeamOrderForm = ({ people, date, onAddOrder }: TeamOrderFormProps) 
           <Button 
             type="submit" 
             className="hero-button w-full" 
-            disabled={teamLines.length === 0 || !selectedPayer}
+            disabled={teamLines.length === 0 || !selectedPayer || !date}
           >
             <Plus className="w-4 h-4 mr-2" />
             Add Team Order ({teamLines.length} people)

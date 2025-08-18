@@ -124,6 +124,12 @@
   }
 }
 
+@layer utilities {
+  .transition-smooth {
+    transition: var(--transition-smooth);
+  }
+}
+
 @layer components {
   /* Food-themed component styles with optimizations */
   .lunch-card {
