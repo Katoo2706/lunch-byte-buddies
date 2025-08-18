@@ -14,16 +14,18 @@ export const calculateBalances = (
   
   // Calculate from orders
   orders.forEach(order => {
+    const unsettledAmount = order.price - (order.settledAmount || 0);
+    
     if (order.isTeamOrder && order.teamMembers) {
       // For team orders, the person ordering owes money (negative)
-      balances[order.personId] -= order.price;
+      balances[order.personId] -= unsettledAmount;
       // Person who paid should receive money (positive)
-      balances[order.payerId] += order.price;
+      balances[order.payerId] += unsettledAmount;
     } else {
       // Regular order: person who ordered owes money (negative)
-      balances[order.personId] -= order.price;
+      balances[order.personId] -= unsettledAmount;
       // Person who paid should receive money (positive)  
-      balances[order.payerId] += order.price;
+      balances[order.payerId] += unsettledAmount;
     }
   });
   

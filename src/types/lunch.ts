@@ -16,6 +16,7 @@ export interface LunchOrder {
   note?: string;
   isTeamOrder?: boolean;
   teamMembers?: string[]; // array of person IDs for team orders
+  settledAmount?: number; // amount that has been settled for this order
 }
 
 export interface Settlement {

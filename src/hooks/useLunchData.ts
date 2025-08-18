@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Person, LunchOrder, Settlement, LunchData } from '@/types/lunch';
 import { calculateBalances } from '@/utils/calculations';
+import { applySettlementToOrders } from '@/utils/settlementLogic';
 import { loadData, saveData } from '@/utils/storage';
 
 export const useLunchData = () => {
@@ -70,10 +71,16 @@ export const useLunchData = () => {
 
   // Settlement management
   const addSettlement = useCallback((settlement: Omit<Settlement, 'id'>) => {
-    setData(prev => ({
-      ...prev,
-      settlements: [...prev.settlements, { ...settlement, id: generateId() }]
-    }));
+    setData(prev => {
+      // Apply settlement logic to automatically settle orders
+      const settlementResult = applySettlementToOrders(prev.orders, settlement, prev.people);
+      
+      return {
+        ...prev,
+        orders: settlementResult.updatedOrders,
+        settlements: [...prev.settlements, { ...settlement, id: generateId() }]
+      };
+    });
   }, [generateId]);
 
   const deleteSettlement = useCallback((settlementId: string) => {

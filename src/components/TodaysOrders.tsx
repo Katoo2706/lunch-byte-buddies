@@ -3,10 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Trash2, Users, History, Filter } from 'lucide-react';
+import { Calendar, Trash2, Users, History, Filter, CheckCircle, AlertCircle } from 'lucide-react';
 import { Person, LunchOrder, Balance } from '@/types/lunch';
 import { GenderIcon } from './GenderIcon';
 import { formatCurrency } from '@/utils/calculations';
+import { getOrderSettlementStatus } from '@/utils/settlementLogic';
 
 interface TodaysOrdersProps {
   date: string;
@@ -33,8 +34,39 @@ export const TodaysOrders = ({ date, orders, people, balances, onDeleteOrder }: 
 
   const isUnsettled = (order: LunchOrder) => {
     if (order.personId === order.payerId) return false;
-    const balance = getPersonBalance(order.personId);
-    return balance < 0;
+    const settlementStatus = getOrderSettlementStatus(order);
+    return settlementStatus !== 'settled';
+  };
+
+  const getSettlementBadge = (order: LunchOrder) => {
+    if (order.personId === order.payerId) return null;
+    
+    const status = getOrderSettlementStatus(order);
+    const settledAmount = order.settledAmount || 0;
+    
+    switch (status) {
+      case 'settled':
+        return (
+          <Badge variant="secondary" className="text-xs bg-green-100 text-green-800 border-green-200">
+            <CheckCircle className="w-3 h-3 mr-1" />
+            Settled
+          </Badge>
+        );
+      case 'partial':
+        return (
+          <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800 border-yellow-200">
+            <AlertCircle className="w-3 h-3 mr-1" />
+            Partial ({formatCurrency(settledAmount)})
+          </Badge>
+        );
+      default:
+        return (
+          <Badge variant="outline" className="text-xs">
+            <AlertCircle className="w-3 h-3 mr-1" />
+            Unsettled
+          </Badge>
+        );
+    }
   };
 
   const getHistoricalOrders = () => {
@@ -121,12 +153,13 @@ export const TodaysOrders = ({ date, orders, people, balances, onDeleteOrder }: 
                       <div className="space-y-2">
                         {teamOrders.map(order => (
                           <div key={order.id} className="flex items-center justify-between p-2 bg-background rounded">
-                            <div className="flex items-center gap-2">
-                              <GenderIcon gender={people.find(p => p.id === order.personId)?.gender || 'male'} />
-                              <span>{getPersonName(order.personId)}</span>
-                              <span className="text-muted-foreground">•</span>
-                              <span className="font-medium">{formatCurrency(order.price)}</span>
-                            </div>
+                             <div className="flex items-center gap-2">
+                               <GenderIcon gender={people.find(p => p.id === order.personId)?.gender || 'male'} />
+                               <span>{getPersonName(order.personId)}</span>
+                               <span className="text-muted-foreground">•</span>
+                               <span className="font-medium">{formatCurrency(order.price)}</span>
+                               {getSettlementBadge(order)}
+                             </div>
                             <Button
                               variant="ghost"
                               size="sm"
@@ -154,13 +187,16 @@ export const TodaysOrders = ({ date, orders, people, balances, onDeleteOrder }: 
                     <div key={order.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
                       <div className="flex items-center gap-3">
                         <GenderIcon gender={people.find(p => p.id === order.personId)?.gender || 'male'} />
-                        <div>
-                          <p className="font-medium">{getPersonName(order.personId)}</p>
-                          <p className="text-sm text-muted-foreground">
-                            Paid by: {getPersonName(order.payerId)} • {formatCurrency(order.price)}
-                          </p>
-                          {order.note && <p className="text-xs text-muted-foreground">{order.note}</p>}
-                        </div>
+                         <div>
+                           <div className="flex items-center gap-2">
+                             <p className="font-medium">{getPersonName(order.personId)}</p>
+                             {getSettlementBadge(order)}
+                           </div>  
+                           <p className="text-sm text-muted-foreground">
+                             Paid by: {getPersonName(order.payerId)} • {formatCurrency(order.price)}
+                           </p>
+                           {order.note && <p className="text-xs text-muted-foreground">{order.note}</p>}
+                         </div>
                       </div>
                       <Button
                         variant="ghost"
@@ -213,14 +249,15 @@ export const TodaysOrders = ({ date, orders, people, balances, onDeleteOrder }: 
                         {order.date}
                       </div>
                       <GenderIcon gender={people.find(p => p.id === order.personId)?.gender || 'male'} />
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{getPersonName(order.personId)}</span>
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {order.note || "Lunch order"} • Paid by: {getPersonName(order.payerId)}
-                        </div>
-                      </div>
+                       <div className="flex-1">
+                         <div className="flex items-center gap-2">
+                           <span className="font-medium">{getPersonName(order.personId)}</span>
+                           {getSettlementBadge(order)}
+                         </div>
+                         <div className="text-sm text-muted-foreground">
+                           {order.note || "Lunch order"} • Paid by: {getPersonName(order.payerId)}
+                         </div>
+                       </div>
                       <div className="font-semibold text-primary">
                         {formatCurrency(order.price)}
                       </div>
